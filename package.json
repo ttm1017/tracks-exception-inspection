@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "devServer": "webpack-dev-server --inline --hot"
+    "hotDevServer": "webpack-dev-server --inline --hot",
+    "devServer": "webpack-dev-server --inline"
   },
   "repository": {
     "type": "git",
@@ -22,17 +23,27 @@
     "url": "https://github.com/ttm1017/tracks-exception-inspection/issues"
   },
   "homepage": "https://github.com/ttm1017/tracks-exception-inspection#readme",
-  "dependencies": {},
+  "dependencies": {
+    "leaflet": "^1.0.3",
+    "material-ui": "^0.17.4",
+    "react-tap-event-plugin": "^2.0.1"
+  },
   "devDependencies": {
     "babel-core": "^6.9.0",
     "babel-loader": "^6.2.4",
     "babel-preset-es2015": "^6.9.0",
     "babel-preset-react": "^6.5.0",
+    "babel-preset-stage-0": "^6.22.0",
+    "css-loader": "^0.28.0",
+    "file-loader": "^0.11.1",
+    "image-webpack-loader": "^3.3.0",
     "koa": "^2.2.0",
+    "node-sass": "^4.5.2",
     "react": "^15.5.3",
     "react-dom": "^15.5.3",
+    "sass-loader": "^6.0.3",
+    "style-loader": "^0.16.1",
     "webpack": "^2.3.3",
-    "webpack-dev-server": "^2.4.2",
-    "babel-preset-stage-0": "^6.22.0"
+    "webpack-dev-server": "^2.4.2"
   }
 }
