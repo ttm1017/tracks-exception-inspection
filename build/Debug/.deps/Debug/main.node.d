@@ -1,0 +1,1 @@
+cmd_Debug/main.node := c++ -bundle -stdlib=libc++ -undefined dynamic_lookup -Wl,-no_pie -Wl,-search_paths_first -mmacosx-version-min=10.7 -arch x86_64 -L./Debug -stdlib=libc++  -o Debug/main.node Debug/obj.target/main/trajectory/main.o /usr/lib/libc++.dylib

@@ -321,13 +321,13 @@ $(obj).$(TOOLSET)/%.o: $(obj)/%.s FORCE_DO_CMD
 
 ifeq ($(strip $(foreach prefix,$(NO_LOAD),\
     $(findstring $(join ^,$(prefix)),\
-                 $(join ^,test.target.mk)))),)
-  include test.target.mk
+                 $(join ^,main.target.mk)))),)
+  include main.target.mk
 endif
 
 quiet_cmd_regen_makefile = ACTION Regenerating $@
-cmd_regen_makefile = cd $(srcdir); /Users/taotanming/.nvm/versions/node/v7.8.0/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp_main.py -fmake --ignore-environment "--toplevel-dir=." -I/Users/taotanming/project/tracks-exception-inspection/build/config.gypi -I/Users/taotanming/.nvm/versions/node/v7.8.0/lib/node_modules/npm/node_modules/node-gyp/addon.gypi -I/Users/taotanming/.node-gyp/7.8.0/include/node/common.gypi "--depth=." "-Goutput_dir=." "--generator-output=build" "-Dlibrary=shared_library" "-Dvisibility=default" "-Dnode_root_dir=/Users/taotanming/.node-gyp/7.8.0" "-Dnode_gyp_dir=/Users/taotanming/.nvm/versions/node/v7.8.0/lib/node_modules/npm/node_modules/node-gyp" "-Dnode_lib_file=node.lib" "-Dmodule_root_dir=/Users/taotanming/project/tracks-exception-inspection" binding.gyp
-Makefile: $(srcdir)/../../.nvm/versions/node/v7.8.0/lib/node_modules/npm/node_modules/node-gyp/addon.gypi $(srcdir)/../../.node-gyp/7.8.0/include/node/common.gypi $(srcdir)/build/config.gypi $(srcdir)/binding.gyp
+cmd_regen_makefile = cd $(srcdir); /Users/taotanming/.nvm/versions/node/v7.8.0/lib/node_modules/node-gyp/gyp/gyp_main.py -fmake --ignore-environment "--toplevel-dir=." -I/Users/taotanming/project/tracks-exception-inspection/build/config.gypi -I/Users/taotanming/.nvm/versions/node/v7.8.0/lib/node_modules/node-gyp/addon.gypi -I/Users/taotanming/.node-gyp/7.8.0/include/node/common.gypi "--depth=." "-Goutput_dir=." "--generator-output=build" "-Dlibrary=shared_library" "-Dvisibility=default" "-Dnode_root_dir=/Users/taotanming/.node-gyp/7.8.0" "-Dnode_gyp_dir=/Users/taotanming/.nvm/versions/node/v7.8.0/lib/node_modules/node-gyp" "-Dnode_lib_file=node.lib" "-Dmodule_root_dir=/Users/taotanming/project/tracks-exception-inspection" "-Dnode_engine=v8" binding.gyp
+Makefile: $(srcdir)/../../.node-gyp/7.8.0/include/node/common.gypi $(srcdir)/build/config.gypi $(srcdir)/binding.gyp $(srcdir)/../../.nvm/versions/node/v7.8.0/lib/node_modules/node-gyp/addon.gypi
 	$(call do_cmd,regen_makefile)
 
 # "all" is a concatenation of the "all" targets from all the included

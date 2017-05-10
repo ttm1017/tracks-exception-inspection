@@ -7,7 +7,6 @@ import 'leaflet/dist/leaflet.css';
 import './index.scss';
 import L from 'leaflet';
 
-
 export default class extends Component {
     componentDidMount() {
         const map = L.map('map').setView([51.505, -0.09], 13);
