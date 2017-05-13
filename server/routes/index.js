@@ -34,3 +34,45 @@ trajectory('/Users/taotanming/project/tracks-exception-inspection/trajectory/hur
     console.log(`Error occurred. Code ${data.code}`);
     console.log(data);
 }).catch( err => {console.log(err)});
+
+
+const router = new Router();
+router.get('/', async function (ctx, next) {
+    const contentState = data.contentState;
+
+    const editorHtml = ReactDOMServer.renderToString(App({contentState}));
+
+    const componentPool = getComponentPool(contentState);
+
+    const staticFile = ocmsComponentImportUtil(componentPool);
+    const HTML = ReactDOMServer.renderToString(
+        html(null, head(null,
+            link({
+                href: staticFile.linkUrl,
+                rel: "stylesheet"
+            }),
+            script({
+                src: '//astyle.alicdn.com/??fdevlib/js/gallery/jquery/jquery-latest.js,fdevlib/js/lofty/port/lofty.js?_v=86ff310debcae83097422b23c0e912c4.js'
+            }),
+            style({
+                dangerouslySetInnerHTML: {
+                    __html: cssStr
+                }
+            })
+        ), body(null,
+            div({
+                id: 'content', dangerouslySetInnerHTML: {
+                    __html: editorHtml
+                }
+            }),
+            script({
+                dangerouslySetInnerHTML: {
+                    __html: staticFile.script
+                }
+            })
+        )));
+    ctx.body = HTML;
+});
+
+
+module.exports = router;
