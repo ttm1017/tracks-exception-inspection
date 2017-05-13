@@ -11,6 +11,7 @@ const AppBarExampleIcon = (props) => {
             <AppBar
                 title="轨迹异常检测系统"
                 onLeftIconButtonTouchTap={() => leftTouchHandle(!sliderOpen)}
+                style={{zIndex:10}}
             />
         );
     };

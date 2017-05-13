@@ -14,20 +14,36 @@ injectTapEventPlugin();
 import Map from '../Map';
 import AppBar from '../AppBar';
 import Slider from '../Slider';
+import Modal from '../Modal';
 import Footer from '../Footer';
 
 export default class extends Component {
+    /**
+     *  curCoords
+     *  @property {string} curCoords.latitude
+     *  @property {string} curCoords.longitude
+     */
     state = {
-        sliderOpen: false
+        sliderOpen: false,
+        curCoords: {},
+        isModalShow: false,
+        destinationLoc: {}
     };
 
     _handleSliderOpen(sliderOpen) {
         this.setState({sliderOpen})
     }
-
+    _setCurrentPosition(crd) {
+        this.setState({curCoords: crd});
+    }
+    _setModalShow(isShow) {
+        this.setState({isModalShow: isShow});
+    }
     constructor() {
         super();
         this.handleSliderOpen = this._handleSliderOpen.bind(this);
+        this.setCurrentPosition = this._setCurrentPosition.bind(this);
+        this.setModalShow = this._setModalShow.bind(this);
     }
 
     render() {
@@ -36,10 +52,18 @@ export default class extends Component {
                 <MuiThemeProvider muiTheme={getMuiTheme(darkBaseTheme)}>
                     <div>
                         <AppBar leftTouchHandle={this.handleSliderOpen}  sliderOpen={this.state.sliderOpen} />
-                        <Slider sliderOpen={this.state.sliderOpen} handleSliderOpen={this.handleSliderOpen}/>
+                        <Slider
+                            sliderOpen={this.state.sliderOpen}
+                            handleSliderOpen={this.handleSliderOpen}
+                            setCurrentPosition={this.setCurrentPosition}
+                            curCoords={this.state.curCoords}
+                            setModalShow={this.setModalShow}
+                            destinationLoc={this.state.destinationLoc}
+                        />
+                        <Modal isModalShow={this.state.isModalShow} />
                     </div>
                 </MuiThemeProvider>
-                <Map />
+                <Map currentPosition={this.state.curCoords} />
                 <Footer />
             </div>
         );
