@@ -25,9 +25,11 @@ export default class extends Component {
      */
     state = {
         sliderOpen: false,
-        curCoords: {},
         isModalShow: false,
-        destinationLoc: {}
+        setDestinationRoute: false,
+        curCoords: {},
+        destinationLoc: {},
+        destinationRoute: {}
     };
 
     _handleSliderOpen(sliderOpen) {
@@ -39,11 +41,19 @@ export default class extends Component {
     _setModalShow(isShow) {
         this.setState({isModalShow: isShow});
     }
+    _setDestinationRoute(destinationRoute) {
+        this.setState({destinationRoute, isBeginLeader: true})
+    }
+    _overLeader() {
+        this.setState({isBeginLeader: true})
+    }
     constructor() {
         super();
         this.handleSliderOpen = this._handleSliderOpen.bind(this);
         this.setCurrentPosition = this._setCurrentPosition.bind(this);
         this.setModalShow = this._setModalShow.bind(this);
+        this.setDestinationRoute = this._setDestinationRoute.bind(this);
+        this.overLeader = this._overLeader.bind(this);
     }
 
     render() {
@@ -59,11 +69,13 @@ export default class extends Component {
                             curCoords={this.state.curCoords}
                             setModalShow={this.setModalShow}
                             destinationLoc={this.state.destinationLoc}
+                            setDestinationRoute={this.setDestinationRoute}
+                            overLeader={this.overLeader}
                         />
                         <Modal isModalShow={this.state.isModalShow} />
                     </div>
                 </MuiThemeProvider>
-                <Map currentPosition={this.state.curCoords} />
+                <Map currentPosition={this.state.curCoords} destinationRoute={this.state.destinationRoute} />
                 <Footer />
             </div>
         );

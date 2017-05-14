@@ -5,9 +5,10 @@
 const Koa = require('koa')
     , logger = require('koa-logger')
     , onerror = require('koa-onerror')
-    , bodyParser = require('koa-bodyparser');
+    , bodyParser = require('koa-bodyparser')
+    , mount = require('koa-mount');
 
-const index = require('./routes/index');
+const index = require('./server/routes/index');
 const app = new Koa();
 // error handler
 onerror(app);
@@ -25,7 +26,7 @@ app.use(async function (ctx, next) {
     console.log('%s %s - %s', this.method, this.url, ms);
 });
 
-app.use(require('koa-static')(__dirname + '/dist'));
+app.use(mount('/assets' ,require('koa-static')(__dirname + '/dist')));
 
 // routes definition
 app.use(index.routes()).use(index.allowedMethods());

@@ -11,8 +11,13 @@ import IconButton from 'material-ui/IconButton';
 import FlatButton from 'material-ui/FlatButton';
 
 //function plugins
-import fetchJsonp from 'fetch-jsonp';
+// import fetchJsonp from 'fetch-jsonp';
+
 class Slider extends Component {
+    state = {
+        desLon: 0,
+        desLat: 0
+    };
     _getCurrentPosition() {
         const {setCurrentPosition, setModalShow} = this.props;
         setModalShow(true);
@@ -48,8 +53,19 @@ class Slider extends Component {
         // });
     }
     _setDestination() {
-        const {destinationLoc} = this.props;
-
+        const {setDestinationRoute} = this.props;
+        fetch(`/currentPosition?desLon=${this.state.desLon}&desLat=${this.state.desLat}`)
+            .then((res)=> {
+                if (!res.ok) {
+                    throw 'Network is not well'
+                }
+                return res.json()
+            })
+            .then((data) => {
+                console.log(data);
+                if (data.id != null && data.status == null)
+                setDestinationRoute(data);
+            })
     }
     constructor() {
         super();
@@ -65,7 +81,7 @@ class Slider extends Component {
         this.getCurrentPosition();
     }
     render() {
-        const {sliderOpen, handleSliderOpen, curCoords} = this.props;
+        const {sliderOpen, handleSliderOpen, curCoords, overLeader} = this.props;
         return (
             <div>
                 <Drawer
@@ -85,17 +101,29 @@ class Slider extends Component {
                     <ListItem>
                         <TextField
                             hintText="目标位置经度"
-                            ref={(input) => {this.desLon = input}}
+                            onChange={(event,value) => {this.setState({desLon: value})}}
+                            defaultValue='122.061'
                         />
                         <TextField
                             hintText="目标位置纬度"
-                            ref={(input) => {this.desLat = input}}
+                            onChange={(event,value) => {this.setState({desLat: value})}}
+                            defaultValue='31.237'
                         />
                     </ListItem>
                     <FlatButton
                         label="开始导航"
                         style={{float: 'right'}}
                         onTouchTap={this.setDestination}
+                    />
+                    <FlatButton
+                        label="开始导航"
+                        style={{float: 'right'}}
+                        onTouchTap={overLeader}
+                    />
+                    <FlatButton
+                        label="Demo1"
+                        style={{float: 'right'}}
+                        onTouchTap={()=> {this.setState({desLat: '31.237', desLon: '122.061'})}}
                     />
                 </Drawer>
             </div>
