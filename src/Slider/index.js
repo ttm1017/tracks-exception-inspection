@@ -16,8 +16,8 @@ import {transformPositionData} from '../utils/dataTransform';
 // import data
 import data from '../../data/outlier';
 
-console.log('===');
-console.log(data);
+let hacknInterId;
+
 class Slider extends Component {
     state = {
         desLon: 0,
@@ -60,7 +60,7 @@ class Slider extends Component {
     }
 
     _setDestination() {
-        const {setDestinationRoute} = this.props;
+        const {setDestinationRoute, curCoords} = this.props;
         fetch(`/currentPosition?desLon=${this.state.desLon}&desLat=${this.state.desLat}`)
             .then((res) => {
                 if (!res.ok) {
@@ -78,7 +78,9 @@ class Slider extends Component {
                         this.connection.onopen =  (event) => {
                             console.log('Connected to: ' + event);
                             this.connection.send(JSON.stringify({
-                                status: 'start'
+                                status: 'start',
+                                endPoint: [this.state.desLat, this.state.desLon],
+                                startPoint: [curCoords.latitude, curCoords.longitude]
                             }));
                         };
                         //close event
@@ -97,11 +99,14 @@ class Slider extends Component {
                          * @property {stirng} event.data.errorInfo
                          */
                         this.connection.onmessage = function (event) {
-                            if (event.data.type === 'error') {
-                                alert(event.data.errorInfo);
+                            const data = JSON.parse(event.data);
+                            if (data.type === 'error') {
+                                alert(data.errorInfo);
+                                //test
+                                if (hacknInterId) clearInterval(hacknInterId);
                             }
-                            if (event.data.type === 'outline') {
-                                const outline = event.data.outline;
+                            if (data.type === 'outline') {
+                                const outline = data.outline;
                             }
                         };
                     }
@@ -148,6 +153,7 @@ class Slider extends Component {
                 const point = outlineTraj.shift();
                 if (point[0] >= 90) {
                     clearInterval(this.nInterId);
+                    this.nInterId = null;
                     alert('the position value is wrong');
                     return;
                 }
@@ -157,6 +163,7 @@ class Slider extends Component {
                 if (renderPoints.length >= outLength) {
                     //finish outline render
                     clearInterval(this.nInterId);
+                    this.nInterId = null;
                     setTestStatus({status: false});
                 }
             };
@@ -167,6 +174,11 @@ class Slider extends Component {
         const testAngle = function(L, testTrajectory) {
             //get outline all data
             const outlineTraj = transformPositionData(testTrajectory.points);
+
+            //test
+            const testStart = outlineTraj[0];
+            this.map.setView(testStart, 10);
+            const circle = L.circleMarker(testStart, {radius: 3,color: 'red',}).addTo(this.map);
 
             if (self.connection) {
 
@@ -190,10 +202,12 @@ class Slider extends Component {
                         }));
                         self.connection.close();
                         clearInterval(this.nInterId);
+                        this.nInterId = null;
                     }
                 };
                 if (this.nInterId == null) {
                     this.nInterId = window.setInterval(sendPoint, 1000);
+                    hacknInterId = this.nInterId;
                 }
             }
         };
@@ -201,6 +215,12 @@ class Slider extends Component {
             //get outline all data
             const outlineTraj = transformPositionData(testTrajectory.points);
             const outlineTrajLength = outlineTraj.length;
+            //test
+            const testStart = outlineTraj[0];
+            this.map.setView(testStart, 10);
+            const circle = L.circleMarker(testStart, {radius: 3,color: 'red',}).addTo(this.map);
+            console.log('===connction');
+            console.log(self.connection);
             if (self.connection) {
 
                 const sendPoint = () => {
@@ -214,7 +234,9 @@ class Slider extends Component {
                         status: 'leading',
                         point
                     };
+                    console.log('beforeSend=====');
                     self.connection.send(JSON.stringify(msg));
+                    console.log('=====afterSend');
 
                     if (outlineTraj.length === outlineTrajLength - 5) {
                         //finish outline render
@@ -224,8 +246,11 @@ class Slider extends Component {
                         self.connection.send(JSON.stringify(msg));
 
                         clearInterval(this.nInterId);
+                        this.nInterId = null;
                     }
                 };
+                console.log('====nInterId');
+                console.log(this.nInterId);
                 if (this.nInterId == null) {
                     this.nInterId = window.setInterval(sendPoint, 1000);
                 }
@@ -235,6 +260,11 @@ class Slider extends Component {
             //get outline all data
             const outlineTraj = transformPositionData(testTrajectory.points);
             const outlineTrajLength = outlineTraj.length;
+            //test
+            const testStart = outlineTraj[0];
+            this.map.setView(testStart, 10);
+            const circle = L.circleMarker(testStart, {radius: 3,color: 'red',}).addTo(this.map);
+
             if (self.connection) {
 
                 const sendPoint = () => {
@@ -252,6 +282,11 @@ class Slider extends Component {
 
                     if (outlineTraj.length === outlineTrajLength - 5) {
                         clearInterval(this.nInterId);
+                        setTimeout(function () {
+                            console.log('sendTimeOUT');
+                            self.connection.send(JSON.stringify(msg));
+                        }, 10000);
+                        this.nInterId = null;
                     }
                 };
                 if (this.nInterId == null) {
@@ -301,7 +336,7 @@ class Slider extends Component {
                         onTouchTap={overLeader}
                     />
                     </div>
-                    <div>
+                    <div style={{overflow:'hidden'}}>
                         <FlatButton
                             label="DestinationDemo1"
                             style={{float: 'right'}}
@@ -341,6 +376,7 @@ class Slider extends Component {
                         label="测试信号突然出现"
                         style={{float: 'left'}}
                         onTouchTap={() => {
+                            console.log('chuxian');
                             setTestStatus({
                                 status: true,
                                 type: 'angle',

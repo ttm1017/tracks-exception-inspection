@@ -18,8 +18,10 @@ const wss = new WebSocket.Server({port: 8001});
 
 wss.on('connection', function connection(ws) {
     let isStart = false;
-    let lastRecivie;
+    let lastRecivie = new Date();
     const currentTrajectory = [];
+    let pointsCount = 0, cirleNumber = 0;
+    let endPoint = [], startPoint = [];
     /**
      * message
      * @property {string} message.status
@@ -27,34 +29,64 @@ wss.on('connection', function connection(ws) {
      */
     ws.on('message', function incoming(message) {
         console.log('received: %s', message);
+        message = JSON.parse(message);
         if (message.status == 'overLead') {
             isStart = false;
+            lastRecivie = new Date();
+            return;
         }
         if (message.status == 'start') {
             isStart = true;
-        }
-        if (isStart && message.point !=null && message.status === 'leading') {
-            const point = message.point;
             lastRecivie = new Date();
-            currentTrajectory.push(point);
+            endPoint = message.endPoint;
+            startPoint = message.startPoint;
+            return;
         }
-        if (isStart && (new Date() - lastRecivie) / 1000 > 10) {
+        if (isStart && (new Date() - lastRecivie) / 1000 > 8) {
             const info = {
                 type: 'error',
                 errorInfo: `Can't get the signal`
             };
             ws.send(JSON.stringify(info));
+            lastRecivie = new Date();
+            return;
         }
+        if (isStart && message.point !=null && message.status === 'leading') {
+            lastRecivie = new Date();
+            const point = message.point;
+            currentTrajectory.push(point);
+            pointsCount ++;
+
+            if (pointsCount >= 5) {
+                const xe = endPoint[0] - startPoint[0],
+                    ye = endPoint[1] - startPoint[1],
+                    xs = currentTrajectory[cirleNumber*30 + pointsCount-1][0] - startPoint[0],
+                    ys = currentTrajectory[cirleNumber*30 + pointsCount-1][1] - startPoint[1];
+                const VectorProduct = xe*xs+ye*ys;
+                console.log(VectorProduct);
+                if (VectorProduct < 0) {
+                    const info = {
+                        type: 'error',
+                        errorInfo: `angle is deviate more`
+                    };
+                    ws.send(JSON.stringify(info));
+                    pointsCount = 0;
+                    cirleNumber++;
+                    return;
+                }
+            }
+            return;
+        }
+
         if (!isStart && message.status === 'leading') {
             const info = {
                 type: 'error',
                 errorInfo: `The signal is not expected exist`
             };
             ws.send(JSON.stringify(info));
+            return;
         }
     });
-
-    ws.send(JSON.stringify({a: 1}));
 });
 
 // global middlewares

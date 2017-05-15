@@ -124,6 +124,8 @@ export default class extends Component {
                 .bindPopup('A pretty CSS3 popup.<br> Easily customizable.')
                 .openPopup();
         }
+        console.log('didUpdate');
+        console.log(testTrajectory);
         if (testTrajectory.status) {
             const {setTestStatus} = this.props;
 
