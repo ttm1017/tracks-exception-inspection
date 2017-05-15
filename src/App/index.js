@@ -26,7 +26,14 @@ export default class extends Component {
     state = {
         sliderOpen: false,
         isModalShow: false,
-        setDestinationRoute: false,
+        isBeginLeader: false,
+        testTrajectory: {
+            status: false,
+            type: '',
+            id: 0,
+            points: [],
+            func: ''
+        },
         curCoords: {},
         destinationLoc: {},
         destinationRoute: {}
@@ -45,7 +52,11 @@ export default class extends Component {
         this.setState({destinationRoute, isBeginLeader: true})
     }
     _overLeader() {
-        this.setState({isBeginLeader: true})
+        this.setState({isBeginLeader: false});
+    }
+    //test handle
+    _setTestStatus(testTrajectory) {
+        this.setState({testTrajectory});
     }
     constructor() {
         super();
@@ -54,6 +65,7 @@ export default class extends Component {
         this.setModalShow = this._setModalShow.bind(this);
         this.setDestinationRoute = this._setDestinationRoute.bind(this);
         this.overLeader = this._overLeader.bind(this);
+        this.setTestStatus = this._setTestStatus.bind(this);
     }
 
     render() {
@@ -71,11 +83,17 @@ export default class extends Component {
                             destinationLoc={this.state.destinationLoc}
                             setDestinationRoute={this.setDestinationRoute}
                             overLeader={this.overLeader}
+                            setTestStatus={this.setTestStatus}
                         />
                         <Modal isModalShow={this.state.isModalShow} />
                     </div>
                 </MuiThemeProvider>
-                <Map currentPosition={this.state.curCoords} destinationRoute={this.state.destinationRoute} />
+                <Map
+                    currentPosition={this.state.curCoords}
+                    destinationRoute={this.state.destinationRoute}
+                    testTrajectory={this.state.testTrajectory}
+                    setTestStatus={this.setTestStatus}
+                />
                 <Footer />
             </div>
         );

@@ -9,15 +9,21 @@ import TextField from 'material-ui/TextField';
 import {List, ListItem} from 'material-ui/List';
 import IconButton from 'material-ui/IconButton';
 import FlatButton from 'material-ui/FlatButton';
-
+//helper func
+import {transformPositionData} from '../utils/dataTransform';
 //function plugins
 // import fetchJsonp from 'fetch-jsonp';
+// import data
+import data from '../../data/outlier';
 
+console.log('===');
+console.log(data);
 class Slider extends Component {
     state = {
         desLon: 0,
         desLat: 0
     };
+
     _getCurrentPosition() {
         const {setCurrentPosition, setModalShow} = this.props;
         setModalShow(true);
@@ -52,10 +58,11 @@ class Slider extends Component {
         //     getNavigatorError(ex);
         // });
     }
+
     _setDestination() {
         const {setDestinationRoute} = this.props;
         fetch(`/currentPosition?desLon=${this.state.desLon}&desLat=${this.state.desLat}`)
-            .then((res)=> {
+            .then((res) => {
                 if (!res.ok) {
                     throw 'Network is not well'
                 }
@@ -63,10 +70,46 @@ class Slider extends Component {
             })
             .then((data) => {
                 console.log(data);
-                if (data.id != null && data.status == null)
-                setDestinationRoute(data);
-            })
+                if (data.status == null) {
+                    if(window.WebSocket != undefined) {
+                        this.connection = new WebSocket('ws://localhost:8001');
+                        //open event
+                        this.connection.onopen =  (event) => {
+                            console.log('Connected to: ' + event);
+                            this.connection.send('connectTIon has be connnert');
+                            setDestinationRoute(data);
+                        };
+                        //close event
+                        this.connection.onclose = function () {
+                            console.log('Close the Websocket');
+                        };
+                        //error handle
+                        this.connection.onerror = function (event) {
+                            console.log("Error: " + event.data);
+                        };
+                        //receive the Message
+                        /**
+                         * event.data
+                         * @property {string} event.data.type
+                         * @property {Array} event.data.outline
+                         * @property {stirng} event.data.errorInfo
+                         */
+                        this.connection.onmessage = function (event) {
+                            if (event.data.type === 'error') {
+                                alert(event.data.errorInfo);
+                            }
+                            if (event.data.type === 'outline') {
+                                const outline = event.data.outline;
+                            }
+                        };
+                    }
+                    else {
+                        alert('You must use Browser with Websoctet function.like: Chrome');
+                    }
+                }
+            });
     }
+
     constructor() {
         super();
         this.options = {
@@ -77,11 +120,52 @@ class Slider extends Component {
         this.getCurrentPosition = this._getCurrentPosition.bind(this);
         this.setDestination = this._setDestination.bind(this);
     }
+
     componentWillMount() {
         this.getCurrentPosition();
     }
+
     render() {
-        const {sliderOpen, handleSliderOpen, curCoords, overLeader} = this.props;
+        const {sliderOpen, handleSliderOpen, curCoords, overLeader, setCurrentPosition, setTestStatus} = this.props;
+
+        const testValueRange = function (L, testTrajectory) {
+            const outlineTraj = transformPositionData(testTrajectory.points);
+            //render the leaflet map
+
+            //test
+            const testStart = outlineTraj[0];
+            this.map.setView(testStart, 10);
+            const circle = L.circleMarker(testStart, {radius: 3,color: 'red',}).addTo(this.map);
+
+            //main content
+            let renderPoints = [];
+            const outLength = outlineTraj.length;
+
+            const route = () => {
+                // renderPoints = renderPoints.concat(outlineTraj.slice(count,count + outLength/8));
+                const point = outlineTraj.shift();
+                if (point[0] >= 90) {
+                    clearInterval(this.nInterId);
+                    alert('the position value is wrong');
+                    return;
+                }
+                renderPoints.push(point);
+                console.log(point);
+                circle.setLatLng(point);
+                if (renderPoints.length >= outLength) {
+                    //finish outline render
+                    clearInterval(this.nInterId);
+                    setTestStatus({status: false});
+                }
+            };
+            if (this.nInterId == null) {
+                this.nInterId = window.setInterval(route, 1000);
+            }
+        };
+        const testAngle = function() {
+
+        };
+
         return (
             <div>
                 <Drawer
@@ -101,29 +185,64 @@ class Slider extends Component {
                     <ListItem>
                         <TextField
                             hintText="目标位置经度"
-                            onChange={(event,value) => {this.setState({desLon: value})}}
-                            defaultValue='122.061'
+                            onChange={(event, value) => {
+                                this.setState({desLon: value})
+                            }}
                         />
                         <TextField
                             hintText="目标位置纬度"
-                            onChange={(event,value) => {this.setState({desLat: value})}}
-                            defaultValue='31.237'
+                            onChange={(event, value) => {
+                                this.setState({desLat: value})
+                            }}
                         />
                     </ListItem>
+                    <div style={{overflow: 'hidden'}}>
                     <FlatButton
                         label="开始导航"
                         style={{float: 'right'}}
                         onTouchTap={this.setDestination}
                     />
                     <FlatButton
-                        label="开始导航"
+                        label="取消导航"
                         style={{float: 'right'}}
                         onTouchTap={overLeader}
                     />
+                    </div>
+                    <div>
+                        <FlatButton
+                            label="DestinationDemo1"
+                            style={{float: 'right'}}
+                            onTouchTap={() => {
+                                setCurrentPosition({latitude: '31.150695', longitude: '122.63159999999999'});
+                                this.setState({desLat: '31.237', desLon: '122.061'});
+                            }}
+                        />
+                    </div>
+                        <FlatButton
+                            label="测试值是否正常范围Demo"
+                            style={{float: 'left'}}
+                            onTouchTap={() => {
+                                setTestStatus({
+                                    status: true,
+                                    type: 'valueRange',
+                                    id: data[0].id,
+                                    points: data[0].point,
+                                    func: testValueRange
+                                })
+                            }}
+                        />
                     <FlatButton
-                        label="Demo1"
-                        style={{float: 'right'}}
-                        onTouchTap={()=> {this.setState({desLat: '31.237', desLon: '122.061'})}}
+                        label="测试角度偏离"
+                        style={{float: 'left'}}
+                        onTouchTap={() => {
+                            setTestStatus({
+                                status: true,
+                                type: 'angle',
+                                id: data[0].id,
+                                points: data[0].point,
+                                func: testAngle
+                            })
+                        }}
                     />
                 </Drawer>
             </div>

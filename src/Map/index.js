@@ -7,6 +7,7 @@ import 'leaflet/dist/leaflet.css';
 import './index.scss';
 import L from './chinaProvider';
 
+
 export default class extends Component {
     componentDidMount() {
         //init
@@ -99,13 +100,13 @@ export default class extends Component {
             console.log('setCurrent');
             return true;
         }
-        if (Object.keys(nextProps.destinationRoute).length > 0 && nextProps.destinationRoute.id !== this.props.destinationRoute.id) {
-            return true;
-        }
+        // if (destinationRoute.length > 0 && nextProps.destinationRoute.id !== this.props.destinationRoute.id) {
+        //     return true;
+        // }
         return true;
     }
     componentDidUpdate() {
-        const {currentPosition, destinationRoute} = this.props;
+        const {currentPosition, destinationRoute, testTrajectory} = this.props;
         if (currentPosition.latitude != null && this.currentPositionChange) {
             this.map.setView([currentPosition.latitude, currentPosition.longitude], 15);
             L.marker([currentPosition.latitude, currentPosition.longitude], {icon: this.markerIcon}).addTo(this.map)
@@ -113,12 +114,23 @@ export default class extends Component {
                 .openPopup();
             this.currentPositionChange = false;
         }
-        if (Object.keys(destinationRoute).length > 0) {
-            const polyline = L.polyline(destinationRoute.points, {color: '#217ac0'}).addTo(this.map);
-            console.log(destinationRoute.points[0]);
-            this.map.setView(destinationRoute.points[0], 10);
+        if (destinationRoute.length > 0) {
+            const allPolyLines = destinationRoute.map((value) => {
+                return value.points;
+            });
+            const polyline = L.polyline(allPolyLines, {color: '#217ac0'}).addTo(this.map);
+            this.map.setView([currentPosition.latitude, currentPosition.longitude], 8);
+            L.marker([currentPosition.latitude, currentPosition.longitude], {icon: this.markerIcon}).addTo(this.map)
+                .bindPopup('A pretty CSS3 popup.<br> Easily customizable.')
+                .openPopup();
         }
+        if (testTrajectory.status) {
+            const {setTestStatus} = this.props;
 
+            testTrajectory.func.call(this, L, testTrajectory);
+
+            setTestStatus({status: false});
+        }
     }
     render() {
         return <div id="map"></div>

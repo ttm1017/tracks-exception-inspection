@@ -62,19 +62,23 @@ router.get('/', async function (ctx, next) {
 router.get('/currentPosition', async function (ctx, next) {
    console.log(ctx.request.query);
    //ctx.request.query is the get method parameters
-    let destinationRoute;
+    let destinationRoute = [];
     const destinationPosition = ctx.request.query;
-    data.forEach((value, index) => {
+    let count = 0;
+    data.some((value, index) => {
+        if (count > 3) {
+            return true;
+        }
         if (index === 1) {
             console.log(`${parseFloat(value.point[value.point.length-2]).toFixed(3)},${parseFloat(value.point[value.point.length-1]).toFixed(3)}`)
         }
-        if (parseFloat(value.point[value.point.length-2]).toFixed(3) === destinationPosition.desLat && parseFloat(value.point[value.point.length-1]).toFixed(3) === destinationPosition.desLon) {
+        if (parseFloat(value.point[value.point.length-2]).toFixed(0) === parseFloat(destinationPosition.desLat).toFixed(0) && parseFloat(value.point[value.point.length-1]).toFixed(0) === parseFloat(destinationPosition.desLon).toFixed(0)) {
             let arr = [];
             for (let i =0;i<value.point.length; i+=2) {
                 arr.push([value.point[i], value.point[i+1]]);
             }
-            destinationRoute = {id :value.id, points: arr};
-            return;
+            destinationRoute.push({id :value.id, points: arr});
+            count++;
         }
     });
     if (destinationRoute != null) {
