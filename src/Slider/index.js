@@ -73,11 +73,13 @@ class Slider extends Component {
                 if (data.status == null) {
                     if(window.WebSocket != undefined) {
                         this.connection = new WebSocket('ws://localhost:8001');
+                        setDestinationRoute(data);
                         //open event
                         this.connection.onopen =  (event) => {
                             console.log('Connected to: ' + event);
-                            this.connection.send('connectTIon has be connnert');
-                            setDestinationRoute(data);
+                            this.connection.send(JSON.stringify({
+                                status: 'start'
+                            }));
                         };
                         //close event
                         this.connection.onclose = function () {
@@ -127,7 +129,7 @@ class Slider extends Component {
 
     render() {
         const {sliderOpen, handleSliderOpen, curCoords, overLeader, setCurrentPosition, setTestStatus} = this.props;
-
+        const self = this;
         const testValueRange = function (L, testTrajectory) {
             const outlineTraj = transformPositionData(testTrajectory.points);
             //render the leaflet map
@@ -162,10 +164,101 @@ class Slider extends Component {
                 this.nInterId = window.setInterval(route, 1000);
             }
         };
-        const testAngle = function() {
+        const testAngle = function(L, testTrajectory) {
+            //get outline all data
+            const outlineTraj = transformPositionData(testTrajectory.points);
 
+            if (self.connection) {
+
+                const sendPoint = () => {
+                    // renderPoints = renderPoints.concat(outlineTraj.slice(count,count + outLength/8));
+                    const point = outlineTraj.shift();
+                    console.log(point);
+                    circle.setLatLng(point);
+
+                    //send message
+                    const msg = {
+                        status: 'leading',
+                        point
+                    };
+                    self.connection.send(JSON.stringify(msg));
+
+                    if (outlineTraj.length === 0) {
+                        //finish outline render
+                        self.connection.send(JSON.stringify({
+                            status: 'overLead'
+                        }));
+                        self.connection.close();
+                        clearInterval(this.nInterId);
+                    }
+                };
+                if (this.nInterId == null) {
+                    this.nInterId = window.setInterval(sendPoint, 1000);
+                }
+            }
         };
+        const testSignalExist = function (L, testTrajectory) {
+            //get outline all data
+            const outlineTraj = transformPositionData(testTrajectory.points);
+            const outlineTrajLength = outlineTraj.length;
+            if (self.connection) {
 
+                const sendPoint = () => {
+                    // renderPoints = renderPoints.concat(outlineTraj.slice(count,count + outLength/8));
+                    const point = outlineTraj.shift();
+                    console.log(point);
+                    circle.setLatLng(point);
+
+                    //send message
+                    const msg = {
+                        status: 'leading',
+                        point
+                    };
+                    self.connection.send(JSON.stringify(msg));
+
+                    if (outlineTraj.length === outlineTrajLength - 5) {
+                        //finish outline render
+                        self.connection.send(JSON.stringify({
+                            status: 'overLead'
+                        }));
+                        self.connection.send(JSON.stringify(msg));
+
+                        clearInterval(this.nInterId);
+                    }
+                };
+                if (this.nInterId == null) {
+                    this.nInterId = window.setInterval(sendPoint, 1000);
+                }
+            }
+        };
+        const testSignalDisappear = function (L, testTrajectory) {
+            //get outline all data
+            const outlineTraj = transformPositionData(testTrajectory.points);
+            const outlineTrajLength = outlineTraj.length;
+            if (self.connection) {
+
+                const sendPoint = () => {
+                    // renderPoints = renderPoints.concat(outlineTraj.slice(count,count + outLength/8));
+                    const point = outlineTraj.shift();
+                    console.log(point);
+                    circle.setLatLng(point);
+
+                    //send message
+                    const msg = {
+                        status: 'leading',
+                        point
+                    };
+                    self.connection.send(JSON.stringify(msg));
+
+                    if (outlineTraj.length === outlineTrajLength - 5) {
+                        clearInterval(this.nInterId);
+                    }
+                };
+                if (this.nInterId == null) {
+                    this.nInterId = window.setInterval(sendPoint, 1000);
+                }
+            }
+        };
         return (
             <div>
                 <Drawer
@@ -241,6 +334,32 @@ class Slider extends Component {
                                 id: data[0].id,
                                 points: data[0].point,
                                 func: testAngle
+                            })
+                        }}
+                    />
+                    <FlatButton
+                        label="测试信号突然出现"
+                        style={{float: 'left'}}
+                        onTouchTap={() => {
+                            setTestStatus({
+                                status: true,
+                                type: 'angle',
+                                id: data[0].id,
+                                points: data[0].point,
+                                func: testSignalExist
+                            })
+                        }}
+                    />
+                    <FlatButton
+                        label="测试信号突然消失"
+                        style={{float: 'left'}}
+                        onTouchTap={() => {
+                            setTestStatus({
+                                status: true,
+                                type: 'angle',
+                                id: data[0].id,
+                                points: data[0].point,
+                                func: testSignalDisappear
                             })
                         }}
                     />
