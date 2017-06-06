@@ -31,6 +31,17 @@ module.exports = {
     devtool: 'inline-source-map',
     devServer: {
         contentBase: "./dist",
-        inline: true
+        inline: true,
+        headers: {
+            "Access-Control-Allow-Origin": "http://localhost:8080 *"
+        },
+        proxy: {
+            "/test": {
+                target: "http://localhost:3000",
+                pathRewrite: {
+                    "^/test": ""
+                }
+            }
+        }
     }
 };

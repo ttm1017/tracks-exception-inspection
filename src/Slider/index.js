@@ -45,7 +45,13 @@ class Slider extends Component {
             setCurrentPosition({err});
             setModalShow(false);
         };
-        navigator.geolocation.getCurrentPosition(getNavigatorSuccess, getNavigatorError, this.options);
+        // navigator.geolocation.getCurrentPosition(getNavigatorSuccess, getNavigatorError, this.options);
+        //use moc position
+        setCurrentPosition({
+            latitude: 31.237115,
+            longitude: 122.060925
+        });
+        setModalShow(false);
         // fetchJsonp('http://ipinfo.io')
         //     .then(function(response) {
         //         return response.json();
@@ -103,7 +109,10 @@ class Slider extends Component {
                             if (data.type === 'error') {
                                 alert(data.errorInfo);
                                 //test
-                                if (hacknInterId) clearInterval(hacknInterId);
+                                if (hacknInterId) {
+                                    clearInterval(hacknInterId);
+                                    hacknInterId = null;
+                                }
                             }
                             if (data.type === 'outline') {
                                 const outline = data.outline;
@@ -116,7 +125,29 @@ class Slider extends Component {
                 }
             });
     }
-
+    getUpdateResult() {
+        const {setTrajectories, trajectories} = this.props;
+        fetch('/result')
+            .then((res) => {
+                if (!res.ok) {
+                    throw 'Network is not well'
+                }
+                return res.json();
+            })
+            .then((data) => {
+                if (data.isNeedUpdate == null) {
+                    const traPoints = trajectories.slice(0);
+                    traPoints.forEach((traValue) => {
+                        data.outline.forEach((outValue) => {
+                            if (traValue.trajectoryId === outValue.trajectoryId) {
+                                Object.assign(traValue.outline, outValue.outline);
+                            }
+                        })
+                    });
+                    setTrajectories(traPoints);
+                }
+            })
+    }
     constructor() {
         super();
         this.options = {
@@ -133,167 +164,210 @@ class Slider extends Component {
     }
 
     render() {
-        const {sliderOpen, handleSliderOpen, curCoords, overLeader, setCurrentPosition, setTestStatus} = this.props;
+        const {sliderOpen, handleSliderOpen, curCoords, overLeader, setCurrentPosition, setTestStatus, setDialogShow, setModalType} = this.props;
         const self = this;
-        const testValueRange = function (L, testTrajectory) {
-            const outlineTraj = transformPositionData(testTrajectory.points);
-            //render the leaflet map
-
-            //test
-            const testStart = outlineTraj[0];
-            this.map.setView(testStart, 10);
-            const circle = L.circleMarker(testStart, {radius: 3,color: 'red',}).addTo(this.map);
-
-            //main content
-            let renderPoints = [];
-            const outLength = outlineTraj.length;
-
-            const route = () => {
-                // renderPoints = renderPoints.concat(outlineTraj.slice(count,count + outLength/8));
-                const point = outlineTraj.shift();
-                if (point[0] >= 90) {
-                    clearInterval(this.nInterId);
-                    this.nInterId = null;
-                    alert('the position value is wrong');
-                    return;
-                }
-                renderPoints.push(point);
-                console.log(point);
-                circle.setLatLng(point);
-                if (renderPoints.length >= outLength) {
-                    //finish outline render
-                    clearInterval(this.nInterId);
-                    this.nInterId = null;
-                    setTestStatus({status: false});
-                }
-            };
-            if (this.nInterId == null) {
-                this.nInterId = window.setInterval(route, 1000);
-            }
-        };
-        const testAngle = function(L, testTrajectory) {
-            //get outline all data
-            const outlineTraj = transformPositionData(testTrajectory.points);
-
-            //test
-            const testStart = outlineTraj[0];
-            this.map.setView(testStart, 10);
-            const circle = L.circleMarker(testStart, {radius: 3,color: 'red',}).addTo(this.map);
-
-            if (self.connection) {
-
-                const sendPoint = () => {
-                    // renderPoints = renderPoints.concat(outlineTraj.slice(count,count + outLength/8));
-                    const point = outlineTraj.shift();
-                    console.log(point);
-                    circle.setLatLng(point);
-
-                    //send message
-                    const msg = {
-                        status: 'leading',
-                        point
-                    };
-                    self.connection.send(JSON.stringify(msg));
-
-                    if (outlineTraj.length === 0) {
-                        //finish outline render
-                        self.connection.send(JSON.stringify({
-                            status: 'overLead'
-                        }));
-                        self.connection.close();
-                        clearInterval(this.nInterId);
-                        this.nInterId = null;
-                    }
-                };
-                if (this.nInterId == null) {
-                    this.nInterId = window.setInterval(sendPoint, 1000);
-                    hacknInterId = this.nInterId;
-                }
-            }
-        };
-        const testSignalExist = function (L, testTrajectory) {
-            //get outline all data
-            const outlineTraj = transformPositionData(testTrajectory.points);
-            const outlineTrajLength = outlineTraj.length;
-            //test
-            const testStart = outlineTraj[0];
-            this.map.setView(testStart, 10);
-            const circle = L.circleMarker(testStart, {radius: 3,color: 'red',}).addTo(this.map);
-            console.log('===connction');
-            console.log(self.connection);
-            if (self.connection) {
-
-                const sendPoint = () => {
-                    // renderPoints = renderPoints.concat(outlineTraj.slice(count,count + outLength/8));
-                    const point = outlineTraj.shift();
-                    console.log(point);
-                    circle.setLatLng(point);
-
-                    //send message
-                    const msg = {
-                        status: 'leading',
-                        point
-                    };
-                    console.log('beforeSend=====');
-                    self.connection.send(JSON.stringify(msg));
-                    console.log('=====afterSend');
-
-                    if (outlineTraj.length === outlineTrajLength - 5) {
-                        //finish outline render
-                        self.connection.send(JSON.stringify({
-                            status: 'overLead'
-                        }));
-                        self.connection.send(JSON.stringify(msg));
-
-                        clearInterval(this.nInterId);
-                        this.nInterId = null;
-                    }
-                };
-                console.log('====nInterId');
-                console.log(this.nInterId);
-                if (this.nInterId == null) {
-                    this.nInterId = window.setInterval(sendPoint, 1000);
-                }
-            }
-        };
-        const testSignalDisappear = function (L, testTrajectory) {
-            //get outline all data
-            const outlineTraj = transformPositionData(testTrajectory.points);
-            const outlineTrajLength = outlineTraj.length;
-            //test
-            const testStart = outlineTraj[0];
-            this.map.setView(testStart, 10);
-            const circle = L.circleMarker(testStart, {radius: 3,color: 'red',}).addTo(this.map);
-
-            if (self.connection) {
-
-                const sendPoint = () => {
-                    // renderPoints = renderPoints.concat(outlineTraj.slice(count,count + outLength/8));
-                    const point = outlineTraj.shift();
-                    console.log(point);
-                    circle.setLatLng(point);
-
-                    //send message
-                    const msg = {
-                        status: 'leading',
-                        point
-                    };
-                    self.connection.send(JSON.stringify(msg));
-
-                    if (outlineTraj.length === outlineTrajLength - 5) {
-                        clearInterval(this.nInterId);
-                        setTimeout(function () {
-                            console.log('sendTimeOUT');
-                            self.connection.send(JSON.stringify(msg));
-                        }, 10000);
-                        this.nInterId = null;
-                    }
-                };
-                if (this.nInterId == null) {
-                    this.nInterId = window.setInterval(sendPoint, 1000);
-                }
-            }
-        };
+        // const testValueRange = function (L, testTrajectory) {
+        //     const outlineTraj = transformPositionData(testTrajectory.points);
+        //     //render the leaflet map
+        //
+        //     //test
+        //     const testStart = outlineTraj[0];
+        //     this.map.setView(testStart, 10);
+        //     const circle = L.circleMarker(testStart, {radius: 3,color: 'red',}).addTo(this.map);
+        //
+        //     //main content
+        //     let renderPoints = [];
+        //     const outLength = outlineTraj.length;
+        //
+        //     const route = () => {
+        //         // renderPoints = renderPoints.concat(outlineTraj.slice(count,count + outLength/8));
+        //         const point = outlineTraj.shift();
+        //         if (point[0] >= 90) {
+        //             clearInterval(this.nInterId);
+        //             this.nInterId = null;
+        //             alert('the position value is wrong');
+        //             return;
+        //         }
+        //         renderPoints.push(point);
+        //         console.log(point);
+        //         circle.setLatLng(point);
+        //         if (renderPoints.length >= outLength) {
+        //             //finish outline render
+        //             clearInterval(this.nInterId);
+        //             this.nInterId = null;
+        //             setTestStatus({status: false});
+        //         }
+        //     };
+        //     if (this.nInterId == null) {
+        //         this.nInterId = window.setInterval(route, 1000);
+        //     }
+        // };
+        // const testAngle = function(L, testTrajectory) {
+        //     const outlineTraj = transformPositionData(testTrajectory.points);
+        //
+        //     //test
+        //     //get outline all data
+        //     const testStart = outlineTraj[0];
+        //     this.map.setView(testStart, 10);
+        //     const circle = L.circleMarker(testStart, {radius: 3,color: 'red',}).addTo(this.map);
+        //
+        //     if (self.connection) {
+        //
+        //         const sendPoint = () => {
+        //             // renderPoints = renderPoints.concat(outlineTraj.slice(count,count + outLength/8));
+        //             const point = outlineTraj.shift();
+        //             console.log(point);
+        //             circle.setLatLng(point);
+        //
+        //             //send message
+        //             const msg = {
+        //                 status: 'leading',
+        //                 point
+        //             };
+        //             self.connection.send(JSON.stringify(msg));
+        //
+        //             if (outlineTraj.length === 0) {
+        //                 //finish outline render
+        //                 self.connection.send(JSON.stringify({
+        //                     status: 'overLead'
+        //                 }));
+        //                 self.connection.close();
+        //                 clearInterval(this.nInterId);
+        //                 this.nInterId = null;
+        //             }
+        //         };
+        //         if (this.nInterId == null) {
+        //             this.nInterId = window.setInterval(sendPoint, 1000);
+        //             hacknInterId = this.nInterId;
+        //         }
+        //     }
+        // };
+        //
+        // const testHistory = function(L, testTrajectory) {
+        //     //get outline all data
+        //     const outlineTraj = transformPositionData(testTrajectory.points);
+        //
+        //     //test
+        //     const testStart = outlineTraj[0];
+        //     this.map.setView(testStart, 10);
+        //     const circle = L.circleMarker(testStart, {radius: 3,color: 'red',}).addTo(this.map);
+        //
+        //     if (self.connection) {
+        //
+        //         const sendPoint = () => {
+        //             // renderPoints = renderPoints.concat(outlineTraj.slice(count,count + outLength/8));
+        //             const point = outlineTraj.shift();
+        //             console.log(point);
+        //             circle.setLatLng(point);
+        //
+        //             //send message
+        //             const msg = {
+        //                 status: 'leading',
+        //                 info: 'testHistory',
+        //                 point
+        //             };
+        //             self.connection.send(JSON.stringify(msg));
+        //
+        //             if (outlineTraj.length === 0) {
+        //                 //finish outline render
+        //                 self.connection.send(JSON.stringify({
+        //                     status: 'overLead'
+        //                 }));
+        //                 self.connection.close();
+        //                 clearInterval(this.nInterId);
+        //                 this.nInterId = null;
+        //             }
+        //         };
+        //         if (this.nInterId == null || hacknInterId == null) {
+        //             this.nInterId = window.setInterval(sendPoint, 1000);
+        //             hacknInterId = this.nInterId;
+        //         }
+        //     }
+        // };
+        //
+        // const testSignalExist = function (L, testTrajectory) {
+        //     //get outline all data
+        //     const outlineTraj = transformPositionData(testTrajectory.points);
+        //     const outlineTrajLength = outlineTraj.length;
+        //     //test
+        //     const testStart = outlineTraj[0];
+        //     this.map.setView(testStart, 10);
+        //     const circle = L.circleMarker(testStart, {radius: 3,color: 'red',}).addTo(this.map);
+        //     console.log('===connction');
+        //     console.log(self.connection);
+        //     if (self.connection) {
+        //
+        //         const sendPoint = () => {
+        //             // renderPoints = renderPoints.concat(outlineTraj.slice(count,count + outLength/8));
+        //             const point = outlineTraj.shift();
+        //             console.log(point);
+        //             circle.setLatLng(point);
+        //
+        //             //send message
+        //             const msg = {
+        //                 status: 'leading',
+        //                 point
+        //             };
+        //             console.log('beforeSend=====');
+        //             self.connection.send(JSON.stringify(msg));
+        //             console.log('=====afterSend');
+        //
+        //             if (outlineTraj.length === outlineTrajLength - 5) {
+        //                 //finish outline render
+        //                 self.connection.send(JSON.stringify({
+        //                     status: 'overLead'
+        //                 }));
+        //                 self.connection.send(JSON.stringify(msg));
+        //
+        //                 clearInterval(this.nInterId);
+        //                 this.nInterId = null;
+        //             }
+        //         };
+        //         console.log('====nInterId');
+        //         console.log(this.nInterId);
+        //         if (this.nInterId == null) {
+        //             this.nInterId = window.setInterval(sendPoint, 1000);
+        //         }
+        //     }
+        // };
+        // const testSignalDisappear = function (L, testTrajectory) {
+        //     //get outline all data
+        //     const outlineTraj = transformPositionData(testTrajectory.points);
+        //     const outlineTrajLength = outlineTraj.length;
+        //     //test
+        //     const testStart = outlineTraj[0];
+        //     this.map.setView(testStart, 10);
+        //     const circle = L.circleMarker(testStart, {radius: 3,color: 'red',}).addTo(this.map);
+        //
+        //     if (self.connection) {
+        //
+        //         const sendPoint = () => {
+        //             // renderPoints = renderPoints.concat(outlineTraj.slice(count,count + outLength/8));
+        //             const point = outlineTraj.shift();
+        //             console.log(point);
+        //             circle.setLatLng(point);
+        //
+        //             //send message
+        //             const msg = {
+        //                 status: 'leading',
+        //                 point
+        //             };
+        //             self.connection.send(JSON.stringify(msg));
+        //
+        //             if (outlineTraj.length === outlineTrajLength - 5) {
+        //                 clearInterval(this.nInterId);
+        //                 setTimeout(function () {
+        //                     console.log('sendTimeOUT');
+        //                     self.connection.send(JSON.stringify(msg));
+        //                 }, 10000);
+        //                 this.nInterId = null;
+        //             }
+        //         };
+        //         if (this.nInterId == null) {
+        //             this.nInterId = window.setInterval(sendPoint, 1000);
+        //         }
+        //     }
+        // };
         return (
             <div>
                 <Drawer
@@ -311,92 +385,47 @@ class Slider extends Component {
                               />}
                     />
                     <ListItem>
-                        <TextField
-                            hintText="目标位置经度"
-                            onChange={(event, value) => {
-                                this.setState({desLon: value})
-                            }}
-                        />
-                        <TextField
-                            hintText="目标位置纬度"
-                            onChange={(event, value) => {
-                                this.setState({desLat: value})
-                            }}
-                        />
+                        {/*<TextField*/}
+                            {/*hintText="目标位置经度"*/}
+                            {/*onChange={(event, value) => {*/}
+                                {/*this.setState({desLon: value})*/}
+                            {/*}}*/}
+                        {/*/>*/}
+                        {/*<TextField*/}
+                            {/*hintText="目标位置纬度"*/}
+                            {/*onChange={(event, value) => {*/}
+                                {/*this.setState({desLat: value})*/}
+                            {/*}}*/}
+                        {/*/>*/}
                     </ListItem>
-                    <div style={{overflow: 'hidden'}}>
+                    {/*<div style={{overflow: 'hidden'}}>*/}
+                    {/*<FlatButton*/}
+                        {/*label="开始导航"*/}
+                        {/*style={{float: 'right'}}*/}
+                        {/*onTouchTap={this.setDestination}*/}
+                    {/*/>*/}
+                    {/*<FlatButton*/}
+                        {/*label="取消导航"*/}
+                        {/*style={{float: 'right'}}*/}
+                        {/*onTouchTap={overLeader}*/}
+                    {/*/>*/}
+                    {/*</div>*/}
                     <FlatButton
-                        label="开始导航"
-                        style={{float: 'right'}}
-                        onTouchTap={this.setDestination}
-                    />
-                    <FlatButton
-                        label="取消导航"
-                        style={{float: 'right'}}
-                        onTouchTap={overLeader}
-                    />
-                    </div>
-                    <div style={{overflow:'hidden'}}>
-                        <FlatButton
-                            label="DestinationDemo1"
-                            style={{float: 'right'}}
-                            onTouchTap={() => {
-                                setCurrentPosition({latitude: '31.150695', longitude: '122.63159999999999'});
-                                this.setState({desLat: '31.237', desLon: '122.061'});
-                            }}
-                        />
-                    </div>
-                        <FlatButton
-                            label="测试值是否正常范围Demo"
-                            style={{float: 'left'}}
-                            onTouchTap={() => {
-                                setTestStatus({
-                                    status: true,
-                                    type: 'valueRange',
-                                    id: data[0].id,
-                                    points: data[0].point,
-                                    func: testValueRange
-                                })
-                            }}
-                        />
-                    <FlatButton
-                        label="测试角度偏离"
-                        style={{float: 'left'}}
+                        label="轨迹检测"
                         onTouchTap={() => {
-                            setTestStatus({
-                                status: true,
-                                type: 'angle',
-                                id: data[0].id,
-                                points: data[0].point,
-                                func: testAngle
-                            })
+                            setDialogShow(true);
+                            handleSliderOpen(false);
+                            setModalType('input');
                         }}
                     />
+                    <br />
                     <FlatButton
-                        label="测试信号突然出现"
-                        style={{float: 'left'}}
+                        label="查看检测结果"
                         onTouchTap={() => {
-                            console.log('chuxian');
-                            setTestStatus({
-                                status: true,
-                                type: 'angle',
-                                id: data[0].id,
-                                points: data[0].point,
-                                func: testSignalExist
-                            })
-                        }}
-                    />
-                    <FlatButton
-                        label="测试信号突然消失"
-                        style={{float: 'left'}}
-                        onTouchTap={() => {
-                            setTestStatus({
-                                status: true,
-                                type: 'angle',
-                                id: data[0].id,
-                                points: data[0].point,
-                                func: testSignalDisappear
-                            })
+                            this.getUpdateResult();
+                            setDialogShow(true);
+                            handleSliderOpen(false);
+                            setModalType('table');
                         }}
                     />
                 </Drawer>

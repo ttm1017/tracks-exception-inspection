@@ -106,33 +106,24 @@ export default class extends Component {
         return true;
     }
     componentDidUpdate() {
-        const {currentPosition, destinationRoute, testTrajectory} = this.props;
+        const {currentPosition, destinationRoute, testTrajectory, examinationResult} = this.props;
         if (currentPosition.latitude != null && this.currentPositionChange) {
-            this.map.setView([currentPosition.latitude, currentPosition.longitude], 15);
+            this.map.setView([currentPosition.latitude, currentPosition.longitude], 8);
             L.marker([currentPosition.latitude, currentPosition.longitude], {icon: this.markerIcon}).addTo(this.map)
-                .bindPopup('A pretty CSS3 popup.<br> Easily customizable.')
+                .bindPopup('您目前的位置')
                 .openPopup();
             this.currentPositionChange = false;
         }
-        if (destinationRoute.length > 0) {
-            const allPolyLines = destinationRoute.map((value) => {
-                return value.points;
-            });
-            const polyline = L.polyline(allPolyLines, {color: '#217ac0'}).addTo(this.map);
-            this.map.setView([currentPosition.latitude, currentPosition.longitude], 8);
-            L.marker([currentPosition.latitude, currentPosition.longitude], {icon: this.markerIcon}).addTo(this.map)
-                .bindPopup('A pretty CSS3 popup.<br> Easily customizable.')
-                .openPopup();
-        }
-        console.log('didUpdate');
-        console.log(testTrajectory);
-        if (testTrajectory.status) {
-            const {setTestStatus} = this.props;
 
-            testTrajectory.func.call(this, L, testTrajectory);
-
-            setTestStatus({status: false});
+        if (examinationResult.isExcute) {
+            console.log('====excute');
+            console.log(examinationResult);
+            const trajectoryPoints = JSON.parse(examinationResult.trajectoryPoints);
+            const totalRoute = L.polyline(trajectoryPoints, {color: '#217ac0'}).addTo(this.map);
+            const outlinePartition = L.polyline(examinationResult.partition, {color: 'red'}).addTo(this.map);
+            this.map.setView(trajectoryPoints[0], 10);
         }
+
     }
     render() {
         return <div id="map"></div>

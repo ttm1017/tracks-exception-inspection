@@ -16,6 +16,7 @@ import AppBar from '../AppBar';
 import Slider from '../Slider';
 import Modal from '../Modal';
 import Footer from '../Footer';
+import Dialog from '../Dialog';
 
 export default class extends Component {
     /**
@@ -26,13 +27,19 @@ export default class extends Component {
     state = {
         sliderOpen: false,
         isModalShow: false,
+        isDialogShow: false,
         isBeginLeader: false,
+        dialogType: 'input',
+        trajectories: [],
         testTrajectory: {
             status: false,
             type: '',
             id: 0,
             points: [],
             func: ''
+        },
+        examinationResult: {
+
         },
         curCoords: {},
         destinationLoc: {},
@@ -47,6 +54,19 @@ export default class extends Component {
     }
     _setModalShow(isShow) {
         this.setState({isModalShow: isShow});
+    }
+    _setModalType(type) {
+        this.setState({dialogType: type});
+    }
+    _setTrajectories(trajectories) {
+        this.setState({trajectories});
+    }
+    _setDialogShow(isShow) {
+        this.setState({isDialogShow: isShow});
+    }
+    _setExaminationResult(examinationResult) {
+        const res = Object.assign({}, this.state.examinationResult, examinationResult);
+        this.setState({examinationResult: res});
     }
     _setDestinationRoute(destinationRoute) {
         this.setState({destinationRoute, isBeginLeader: true})
@@ -66,8 +86,20 @@ export default class extends Component {
         this.setDestinationRoute = this._setDestinationRoute.bind(this);
         this.overLeader = this._overLeader.bind(this);
         this.setTestStatus = this._setTestStatus.bind(this);
+        this.setDialogShow = this._setDialogShow.bind(this);
+        this.setModalType = this._setModalType.bind(this);
+        this.setTrajectories = this._setTrajectories.bind(this);
+        this.setExaminationResult = this._setExaminationResult.bind(this);
     }
-
+    componentDidMount() {
+        fetch('/test/test', {
+            method: 'GET'
+        }).then((res) => {
+            return res.text();
+        }).then((data) =>{
+            console.log(data);
+        })
+    }
     render() {
         return (
             <div className="wrapper">
@@ -84,8 +116,20 @@ export default class extends Component {
                             setDestinationRoute={this.setDestinationRoute}
                             overLeader={this.overLeader}
                             setTestStatus={this.setTestStatus}
+                            setDialogShow = {this.setDialogShow}
+                            setModalType={this.setModalType}
+                            trajectories={this.state.trajectories}
+                            setTrajectories={this.setTrajectories}
                         />
                         <Modal isModalShow={this.state.isModalShow} />
+                        <Dialog
+                            isDialogShow = {this.state.isDialogShow}
+                            setDialogShow = {this.setDialogShow}
+                            dialogType={this.state.dialogType}
+                            trajectories={this.state.trajectories}
+                            setTrajectories={this.setTrajectories}
+                            setExaminationResult={this.setExaminationResult}
+                        />
                     </div>
                 </MuiThemeProvider>
                 <Map
@@ -93,6 +137,7 @@ export default class extends Component {
                     destinationRoute={this.state.destinationRoute}
                     testTrajectory={this.state.testTrajectory}
                     setTestStatus={this.setTestStatus}
+                    examinationResult={this.state.examinationResult}
                 />
                 <Footer />
             </div>
